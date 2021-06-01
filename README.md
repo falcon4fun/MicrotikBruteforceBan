@@ -97,7 +97,7 @@ Delay Threshold = Time window for the scores to be calculated
 Low Port Weight = Score assigned for a new connection for a port number less than 1024  
 High Port Weight = Score assigned for a new connection for a port number greater than 1024
 ```  
-3. Ban time by default is permanent or 24h.
+3. Ban time is different for rules. Some is permanent, some is 5m, some - 24h. Correct values by yourself.  
 
 # Optimization
 The script is quite "dirty". There is no any recent and set module, so I need to use what I have. I think this is the best way for me as it is a script for home.  
