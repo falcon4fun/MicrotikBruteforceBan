@@ -1,5 +1,5 @@
 # MicrotikBruteforceBan
-Attempt to rewrite https://github.com/falcon4fun/IptablesBruteforceBan for Mikrotik firewall
+Attempt to rewrite https://github.com/falcon4fun/IptablesBruteforceBan for Mikrotik firewall and BAN portscanners and bruteforcers by Mikrotik firewall
 
 Logic is the same except there is no recent and set modules. Only internal address lists.  
 We will use them with dst-limit to count connections of IP per given time.
@@ -96,7 +96,8 @@ Weight Threshold = Total score needed to be reached to be thought a port scan at
 Delay Threshold = Time window for the scores to be calculated  
 Low Port Weight = Score assigned for a new connection for a port number less than 1024  
 High Port Weight = Score assigned for a new connection for a port number greater than 1024
-```
+```  
+3. Ban time by default is permanent or 24h.
 
 # Optimization
 The script is quite "dirty". There is no any recent and set module, so I need to use what I have. I think this is the best way for me as it is a script for home.  
