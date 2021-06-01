@@ -1,11 +1,11 @@
 # MicrotikBruteforceBan
 Attempt to rewrite https://github.com/falcon4fun/IptablesBruteforceBan for Mikrotik firewall
 
-Logic is the same except there is no recent and set modules. Only internal adress lists.  
+Logic is the same except there is no recent and set modules. Only internal address lists.  
 We will use them with dst-limit to count connections of IP per given time.
 
 # Script
-1. We need to check some input ports on WAN interface (vpn ports). I've put before drop invalid. SSH Chain will be created on the end.  
+1. We need to check some input ports on WAN interface (VPN ports). I've put before drop invalid. SSH Chain will be created on the end.  
 ```
 add action=jump chain=input comment="bruteforce input" connection-state=new dst-port=1194,1723 in-interface-list=WAN jump-target=SSH protocol=tcp
 add action=jump chain=input connection-state=new dst-port=500,1701,4500 in-interface-list=WAN jump-target=SSH protocol=udp
@@ -14,7 +14,7 @@ add action=jump chain=input connection-state=new dst-port=500,1701,4500 in-inter
 ```
 add action=add-src-to-address-list address-list=Port_Scanners address-list-timeout=none-dynamic chain=input comment="address list portscanners" in-interface-list=WAN log-prefix=psd protocol=tcp psd=9,3s,3,1
 ``` 
-3. Check additional ports. Settings up honeypot ports. There is a huge amount of scans of 1024,8291 and 8728. Futhermore, I've set RDP ports here except my ones which I forwarded. This is the last rule of input before "defconf: drop all not coming from LAN"
+3. Check additional ports. Settings up honeypot ports. There is a huge amount of scans of 1024,8291 and 8728. Furthermore, I've set RDP ports here except my ones which I forwarded. This is the last rule of input before "defconf: drop all not coming from LAN"
 ```
 add action=jump chain=input comment="bruteforce input" connection-state=new dst-port=22-23 in-interface-list=WAN jump-target=SSH protocol=tcp
 add action=jump chain=input connection-state=new dst-port=1024,8291,8728 in-interface-list=WAN jump-target=HONEY protocol=tcp
@@ -28,7 +28,7 @@ add action=jump chain=forward connection-state=new dst-port=21 in-interface-list
 add action=jump chain=forward connection-state=new dst-port=3773,9875 in-interface-list=WAN jump-target=PROXY protocol=tcp 
 add action=jump chain=forward connection-state=new dst-port=3773,9875 in-interface-list=WAN jump-target=PROXY protocol=udp
 ```
-5. You need to create corresponding chains
+5. We need to create corresponding chains
 ```
 add action=passthrough chain=HONEY comment=HONEY disabled=yes  
 add action=jump chain=HONEY jump-target=HONEY2  
@@ -86,12 +86,25 @@ add action=passthrough chain=TMP_Ban disabled=yes
 add action=return chain=TMP_Timeout comment=TMP_Timeout dst-limit=5/30m,5,src-address/30m
 add action=add-src-to-address-list address-list=RDP_Ban address-list-timeout=none-dynamic chain=TMP_Timeout log=yes log-prefix=TMP_Timeout
 ```
+# Some more info
+1. DST-Limit works like iptables one. The rule with 'dst-limit' is true and action is triggered when packet rate is below rate set by you.
+If there are more connections from given IP per given time, next rules will be triggered, ban rules in my case.
+2. Port-scanners ban rule use psd parameter.  
+Using values psd=9,3s,3,1 Total weight is 9, delay is 3s, <1024 weight is 3 and >1024 is 1. So port scanner can scan 3 ports within range 0-1024 in 3s to get ban or 9 ports within range 1024-65535 in 3s to get ban.  
+```
+Weight Threshold = Total score needed to be reached to be thought a port scan attempt  
+Delay Threshold = Time window for the scores to be calculated  
+Low Port Weight = Score assigned for a new connection for a port number less than 1024  
+High Port Weight = Score assigned for a new connection for a port number greater than 1024
+```
+
 # Optimization
-The script is quite "dirty". There is no any recent and set module so I need to use what I have. I think this is the best way for me as it is a script for home.  
-Some chains can be merged but I prefer better look. That's why I use RDP1, RDP2, .. RDPn in RDP chain to beatify it. I don't think redirecting from one chain to another without any conditions will consume very much CPU time.  
-Moreover some rules can be combined. I.e. first paragraph can be combined to dst-port=1194,1723,500,1701,4500 but I prefer more statistics like packet count in firewall tab to analyze.  
+The script is quite "dirty". There is no any recent and set module, so I need to use what I have. I think this is the best way for me as it is a script for home.  
+Some chains can be merged, but I prefer a better look. That's why I use RDP1, RDP2, .. RDPn in RDP chain to beatify it. I don't think redirecting from one chain to another without any conditions will consume very much CPU time.  
+Moreover, some rules can be combined. I.e. first paragraph can be combined to dst-port=1194,1723,500,1701,4500, but I prefer more statistics like packet count in firewall tab to analyze.  
+
 It's quite dirty way to use dst-limit. You need to loosen my values for your needs. I.e. server or high loaded port with legit new connections. I need RDP, VPN and etc ports from WAN one time per over9000 days. So the rules are very strict and can ban legit things.  
-Chain1, Chain2, ChainN are for double checking. Some bruteforcers have a lot of IPs and can come after 2-6 hours, as I mentioned in IptablesBan script.  
+Chain1, Chain2, ChainN are for double-checking. Some bruteforcers have a lot of IPs and can come after 2-6 hours, as I mentioned in IptablesBan script.  
 Some rules are disabled because I'm too lazy to make it for production use. So please clean disabled ones by yourself. In example, reject ones from filter. They moved to raw :)
 
 
